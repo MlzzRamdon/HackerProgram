@@ -23,15 +23,16 @@ font = pygame.font.Font(None, 32)
 button_font = pygame.font.Font(None, 28)
 
 # Terminal variables
-input_lines = []  # User-written lines of "code"
+input_lines = [] # User-written lines of "code"
 current_line = ''  # Current line being typed
+msg = '' # Message at the bottom of the screen
 
 # Buttons
 save_button = pygame.Rect(50, HEIGHT - 60, 140, 40)  # Save button
 exit_button = pygame.Rect(WIDTH - 190, HEIGHT - 60, 140, 40)  # Exit button
 
 # Function to save user input to a file
-def save_code(lines, filename="user_code.py"):
+def save_code(lines, filename="user_code.txt"):
     with open(filename, "w") as file:
         for line in lines:
             file.write(line + "\n")
@@ -53,8 +54,35 @@ while running:
                 running = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:  # Submit the current line
-                input_lines.append(current_line)  # Add to code lines
-                current_line = ''  # Reset current line
+
+                # Checks if this is the first line. If it is, we cannot check the previous line or we will get a list index error. It's not clean but it works.
+                if len(input_lines) >= 0:
+                    # Checks is the previous line is a recognized command (more commands wil be added later)
+                    if current_line.lower() == "print" or current_line.lower() == "print:":
+                        input_lines.append("Print: ")
+                        current_line = ''
+                        msg = ''
+
+                    # Displays an error message to the console if the current code meets neither requirement
+                    else:
+                        msg = "Unrecognized command."
+
+                # Checks for recognized commands (more commands wil be added later)
+                if input_lines[len(input_lines) - 1] == "Print: ":
+                    input_lines[len(input_lines) - 1] = "Print: " + current_line
+                    current_line = ''
+                    msg = ''
+                
+                # Checks is the previous line is a recognized command (more commands wil be added later)
+                elif current_line.lower() == "print":
+                    input_lines.append("Print: ")
+                    current_line = ''
+                    msg = ''
+
+                # Displays an error message to the console if the current code meets neither requirement
+                else:
+                    msg = "Unrecognized command."
+
             elif event.key == pygame.K_BACKSPACE:  # Backspace key
                 current_line = current_line[:-1]
             else:  # Add typed character
@@ -65,10 +93,12 @@ while running:
 
     # Render previous lines
     y_offset = 50
-    for line in input_lines[-20:]:  # Show last 20 lines
+    for line in input_lines[-14:]:  # Show last 14 lines
         line_surface = font.render(line, True, GREEN)
         screen.blit(line_surface, (50, y_offset))
         y_offset += 30
+    line_surface = font.render(msg, True, RED)
+    screen.blit(line_surface, (50, 500))
 
     # Render current line being typed
     current_line_surface = font.render(current_line, True, GREEN)
